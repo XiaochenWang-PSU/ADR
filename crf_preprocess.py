@@ -14,11 +14,13 @@ global past
 class document():
     def __init__(self,text,origin,dic):
         self.annotation = re.split("\n",open(origin).read())
+        self.ori = open(text).read()
         self.name = text
         self.text = nltk.word_tokenize(open(text).read())        
         i = 0
         annotation_copy = re.split("\n",open(origin).read())
         self.gram = nltk.pos_tag(self.text,tagset = 'universal')
+        self.context = str(open(text).read())
         while i < len(self.annotation):
             if self.annotation[i] == "":
                 del self.annotation[i]
@@ -74,14 +76,23 @@ def tag(obj,index,pa):
     else:
         past = "Other"
     return past
+def location(obj,index):
+    global before
+    start = obj.context.find(obj.ori_text[index],before)
+    end = obj.context.find(obj.ori_text[index],before)+len(obj.ori_text[index])
+    before = end
+    return(obj.ori_text[index],start,end)
 def transform(objects,dic):
-    x,y = [],[]    
+    x,y,loca = [],[],[]    
     global past
+    global before
     past = 0
     for i in range(len(objects)):
+                before = 0
                 x.append([features(objects[i],g,dic) for g in range(len(objects[i].text))])
                 y.append([tag(objects[i],g,past) for g in range(len(objects[i].text))])
-    return x,y
+                loca.append([location(objects[i],g) for g in range(len(objects[i].text))])
+    return x,y,loca
 def clean(x,y):
     i = 0
     l = len(x)
@@ -93,3 +104,15 @@ def clean(x,y):
             i-=1
         i+=1
     return x,y
+def clean_(x,y,z):
+    i = 0
+    l = len(x)
+    while i < l:
+        if x[i] == None:
+            del x[i]
+            del y[i]
+            del z[i]
+            l-=1
+            i-=1
+        i+=1
+    return x,y,z

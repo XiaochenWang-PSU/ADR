@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jul 15 11:06:10 2019
+Created on Thu Aug  8 08:21:41 2019
 
 @author: Wang
 """
@@ -10,16 +10,19 @@ import re
 import string
 import nltk
 import numpy as np
+from vowpalwabbit import pyvw
+import sys
+global past
 class document():
     def __init__(self,text,origin,dic):
-        self.ori = open(text).read()
         self.annotation = re.split("\n",open(origin).read())
+        self.ori = open(text).read()
         self.name = text
         self.text = nltk.word_tokenize(open(text).read())        
-        self.context = str(open(text).read())
         i = 0
         annotation_copy = re.split("\n",open(origin).read())
         self.gram = nltk.pos_tag(self.text,tagset = 'universal')
+        self.context = str(open(text).read())
         while i < len(self.annotation):
             if self.annotation[i] == "":
                 del self.annotation[i]
@@ -40,62 +43,40 @@ class document():
             self.span[i] = re.split(' ',''.join(c for c in annotation_copy[i] if c not in string.punctuation))
         self.ori_text =[[] for i in range(len(self.text))]
         for i in range(len(self.text)):
-            self.ori_text[i] = self.text[i]
+            self.ori_text[i] = self.text[i] 
         for g in range(len(self.text)):
             flag = 0
-            res = [0 for i in range(200)]
+            res = [0 for i in range(100)]
             for i in range(len(dic)):
-                if self.text[g].lower() == dic[i][0] and len(dic[i]) == 202:
-                    res = list(map(float,dic[i][1:201]))
+                if self.text[g].lower() == dic[i][0] and len(dic[i]) == 102:
+                    res = list(map(float,dic[i][1:101]))
                     flag = 1
                     break
             self.text[g] = res
 def features(obj,index,dic):
     maxsum = maxnum = minnum = minsum = maxaver = minaver = 0
-    past = [0 for i in range(200)] if index == 0 else obj.text[index-1]
-    next_ = [0 for i in range(200)] if index == len(obj.text)-1 else obj.text[index+1]
+    past = [0 for i in range(100)] if index == 0 else obj.text[index-1]
+    next_ = [0 for i in range(100)] if index == len(obj.text)-1 else obj.text[index+1]
     voc =  np.append(np.append(obj.text[index],past),next_)
     caps = float(0.1*(obj.ori_text[index][0].upper() == obj.ori_text[index][0]) and (index!=0 and obj.ori_text[index-1] != '.'))
     return list(np.append(np.append(voc,caps),float(0.01*len(obj.ori_text[index]))))
-                
 def tag(obj,index,pa):
     global past
     flag =0
     loc = 0
+    na = "tag"
     for i in range(len(obj.span)):
         if (obj.ori_text[index] in obj.span[i]) and  ((len(obj.span[i]) ==1) or (obj.ori_text[index-1] in obj.span[i] or obj.ori_text[index+1] in obj.span[i])):
             flag =1
             loc = i
-#    if flag == 1:
-#        if obj.tag[loc] == "ADR":
-#                    past = 1
-#        else:
-#            past = -1
-#    else:
-#        past = -1
-#    return past
     if flag == 1:
-        past = obj.tag[loc]
-
+        if obj.tag[loc] == "ADR":
+                    past = 1
+        else:
+            past = -1
     else:
-        past = "Other"
-    return [past]
-#    for i in range(len(obj.span)):
-#        for g in range(len(obj.span[i])):
-##            if (obj.ori_text[index] == obj.span[i][g]) and (len(obj.span[i]) == 1 or (len(obj.span[i]) !=1 and ((index != 0 and g !=0 and obj.ori_text[index-1] == obj.span[i][g-1]) or (index != len(obj.ori_text)-1 and g!= len(obj.ori_text)-1 and obj.ori_text[index+1] == obj.span[i][g+1])))):   
-#                #find whether the word is in the span, and if the word is in the span, find if the word surrounding it is also in the span while the span doesn't consist of only one word
-#         if (obj.ori_text[index] in obj.span[i]) and  ((len(obj.span[i]) ==1) or (obj.ori_text[index-1] in obj.span[i] or obj.ori_text[index+1] in obj.span[i])): 
-#                flag =1
-#                loc = i
-#                break
-#    if flag == 1:
-#        return  {
-#                "tag": obj.tag[loc]
-#                }
-#    else:
-#        return  {
-#                    "tag":"Other"
-#                    }
+        past = -1
+    return past
 def location(obj,index):
     global before
     start = obj.context.find(obj.ori_text[index],before)
@@ -139,13 +120,3 @@ def clean_(x,y,z):
             i-=1
         i+=1
     return x,y,z
-#dic = open('D:\Medhelp_100d.txt','r',encoding='UTF-8').read()
-#dic = dic.split('\n')
-#for i in range(len(dic)):
-#    dic[i] = dic[i].split(' ')
-#print("completed")
-#ex = document('D:/cadec/text/ARTHROTEC.1.txt','D:/cadec/Ori/ARTHROTEC.1.ann',dic)
-#print(ex.annotation)
-#print(ex.context.find("feel"))
-#print(ex.ori_text[1])
-#print(location(ex,1))
