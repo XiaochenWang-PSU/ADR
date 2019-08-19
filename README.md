@@ -1,2 +1,2 @@
 # ADR
-Used for Share Code
+Used for Sharing Code
