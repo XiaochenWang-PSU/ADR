@@ -9,6 +9,8 @@ import numpy as np
 from time import *
 from Scorer import *
 import nltk
+
+# a sample of how to used the function
 text = pd.read_table('D:\Simplified.txt')
 text = np.array(text)
 begin_time = time()
