@@ -14,6 +14,7 @@ import pandas as pd
 
 
 def centroid(tokens,dic):
+    #   calculate the centroid of each phrase,return a vector
     vec = []
     fin_vec = []
     print(tokens)
@@ -32,6 +33,7 @@ def centroid(tokens,dic):
         fin_vec.append(round(cen/len(vec),8))
     return fin_vec
 def cos_sim(x,y):
+    #   calculate the logical distance between two vector, return a float
     if(len(x)!=len(y)):
         print('error input,x and y is not in the same space')
         return 0 ;
@@ -69,6 +71,7 @@ def cos_sim(x,y):
 #    file.close()
 #    return res
 def score(x,threshold,text):
+    #   given a threshold, return all the possible entities
     chunktable = pd.read_table('D:\Refer.txt',chunksize = 5000)
     i = 0
     g = 0
@@ -84,6 +87,7 @@ def score(x,threshold,text):
         print(i)
     return res
 def segment(tokens,start,end):
+    #   used for chunking
     res = str("")
     for i in range(start,end):
         res = res+tokens[i]+" "
@@ -93,6 +97,7 @@ def segment(tokens,start,end):
     fin = fin+tokens[end+1:]
     return fin
 def dymatic_planing(que,dic,text):
+    #   for geting the best chunking
     res = []
     for start in range(len(que)):
         for end in range(start+1,len(que)):
