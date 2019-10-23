@@ -10,20 +10,25 @@ import nltk
 from time import *
 import re
 import pandas as pd
-
+from annoy import AnnoyIndex
+import random
+#from HashTable import *
 
 
 def centroid(tokens,dic):
-    #   calculate the centroid of each phrase,return a vector
+#   calculate the centroid of each phrase,return a vector
     vec = []
     fin_vec = []
-    print(tokens)
+    tokens = nltk.word_tokenize(str(tokens))
     for words in tokens:
+#        print(words)
         try:
-            word = nltk.word_tokenize(words)
-            for w in word:
-                print(w)
-                vec.append(dic[w.lower()])
+#            print(words)
+#            word = nltk.word_tokenize(words)
+#            print(words)
+#            for w in words:
+#                print(w)
+            vec.append(dic[words.lower()])
         except:
             vec.append([0 for i in range(100)])
     for g in range(len(vec[0])):
@@ -33,7 +38,6 @@ def centroid(tokens,dic):
         fin_vec.append(round(cen/len(vec),8))
     return fin_vec
 def cos_sim(x,y):
-    #   calculate the logical distance between two vector, return a float
     if(len(x)!=len(y)):
         print('error input,x and y is not in the same space')
         return 0 ;
@@ -70,24 +74,30 @@ def cos_sim(x,y):
 ##        vec = list(map(float,tem[1:499].split(', ')))
 #    file.close()
 #    return res
-def score(x,threshold,text):
-    #   given a threshold, return all the possible entities
-    chunktable = pd.read_table('D:\Refer.txt',chunksize = 5000)
+#def score(x,threshold,text):
+#    chunktable = pd.read_table('D:\Refer.txt',chunksize = 5000)
+#    i = 0
+#    g = 0
+#    res = []
+#    for chunk in chunktable:
+#        arr = np.array(chunk)
+#        for line in arr:
+#            vec = re.split(', |]',line[0][1:])[:-1]
+#            grade = cos_sim(x,vec) 
+#            if grade>threshold:
+#                res.append((text[i],grade))
+#        i+=1
+#        print(i)
+#    return res
+def score(x,concept,dic,refer):
     i = 0
-    g = 0
     res = []
-    for chunk in chunktable:
-        arr = np.array(chunk)
-        for line in arr:
-            vec = re.split(', |]',line[0][1:])[:-1]
-            grade = cos_sim(x,vec) 
-            if grade>threshold:
-                res.append((text[i],grade))
-        i+=1
-        print(i)
-    return res
+    try:
+        mark = dic["['"+x+"']"]
+    except:
+        return 0 
+    return cos_sim(centroid(x,refer),centroid(concept,refer))
 def segment(tokens,start,end):
-    #   used for chunking
     res = str("")
     for i in range(start,end):
         res = res+tokens[i]+" "
@@ -95,12 +105,31 @@ def segment(tokens,start,end):
     fin = (tokens[:start])
     fin.append(res)
     fin = fin+tokens[end+1:]
-    return fin
-def dymatic_planing(que,dic,text):
-    #   for geting the best chunking
+    return res,fin
+#def dymatic_planing(que,dic,text):
+#    res = []
+#    for start in range(len(que)):
+#        for end in range(start+1,len(que)):
+#            seg = segment(que,start,end)
+#            res.append(score(centroid(seg,dic),0.9,text))
+#    return res
+def dymatic_planing(que,dic,refer):
     res = []
     for start in range(len(que)):
         for end in range(start+1,len(que)):
-            seg = segment(que,start,end)
-            res.append(score(centroid(seg,dic),0.9,text))
+            cand,seg = segment(que,start,end)
+            rank = score(cand,seg,dic,refer)
+            if rank!=0:
+                res.append((cand,rank))
+    return res
+def mapping(vec,dic):
+    res = []
+    chunk = int(10406793/10)
+    for i in range(10):
+        print(i)
+        u = AnnoyIndex(100, 'angular')
+        u.load('D:/distance__'+str(i)) # mmap the file
+        print(u.get_nns_by_vector(vec, 2))
+        for g in range(2):
+            res.append(dic[int(u.get_nns_by_vector(vec, 2)[g])+i*chunk]) # will find the 1000 nearest neighbors
     return res
